@@ -1,0 +1,19 @@
+{
+    "name": "model/db",
+    "description": "MySQL abstraction layer for ModEl Framework",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Domenico Giambra",
+            "email": "zorinik@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {"Model\\Db\\": "src/"}
+    },
+    "require": {
+        "ext-pdo": "*",
+        "model/query-builder": "^0.1.7",
+        "model/db-parser": "^0.1.6"
+    }
+}
