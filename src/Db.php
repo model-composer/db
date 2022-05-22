@@ -22,7 +22,7 @@ class Db
 		if (!isset($config['databases'][$name]))
 			throw new \Exception('Db "' . $name . '" not found in config');
 
-		self::$connections[$name] = new DbConnection($config);
+		self::$connections[$name] = new DbConnection($config['databases'][$name]);
 		return self::$connections[$name];
 	}
 
