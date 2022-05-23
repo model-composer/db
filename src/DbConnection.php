@@ -260,6 +260,27 @@ class DbConnection
 	}
 
 	/**
+	 * @param string $k
+	 * @param array $options
+	 * @return string
+	 */
+	public function parseColumn(string $k, array $options = []): string
+	{
+		return $this->builder->parseColumn($k, $options);
+	}
+
+	/**
+	 * @param mixed $v
+	 * @param string|null $type
+	 * @return string
+	 * @throws \Exception
+	 */
+	public function parseValue(mixed $v, ?string $type = null): string
+	{
+		return $this->builder->parseValue($v, $type);
+	}
+
+	/**
 	 * @return bool
 	 */
 	public function inTransaction(): bool
