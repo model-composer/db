@@ -5,13 +5,33 @@ use Model\QueryBuilder\QueryBuilder;
 
 class DbConnection
 {
+	private readonly array $config;
 	private \PDO $db;
-	private int $c_transactions = 0;
 	private Parser $parser;
 	private QueryBuilder $builder;
 
-	public function __construct(public readonly array $config)
+	private int $c_transactions = 0;
+	private array $query_counters = [
+		'query' => 0,
+		'table' => 0,
+		'total' => 0,
+	];
+
+	public function __construct(array $config)
 	{
+		$this->config = array_merge([
+			'host' => 'localhost',
+			'port' => 3306,
+			'user' => 'root',
+			'password' => '',
+			'name' => 'database',
+			'limits' => [
+				'query' => 100,
+				'table' => 10000,
+				'total' => null,
+			],
+		], $config);
+
 		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=utf8', $this->config['username'], $this->config['password'], [
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 			\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
@@ -37,7 +57,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		$this->query($qry);
+		$this->query($qry, $table, 'INSERT');
 		return $this->db->lastInsertId();
 	}
 
@@ -60,7 +80,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		return $this->query($qry);
+		return $this->query($qry, $table, 'UPDATE');
 	}
 
 	/**
@@ -78,7 +98,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		return $this->query($qry);
+		return $this->query($qry, $table, 'DELETE');
 	}
 
 	/**
@@ -94,7 +114,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		$result = $this->query($qry)->fetch();
+		$result = $this->query($qry, $table, 'SELECT')->fetch();
 
 		return $result ? $this->normalizeRowValues($table, $result) : null;
 	}
@@ -111,7 +131,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		$response = $this->query($qry);
+		$response = $this->query($qry, $table, 'SELECT');
 
 		$results = $this->streamResults($table, $response);
 
@@ -159,7 +179,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		return $this->query($qry);
+		return $this->query($qry, null, 'SELECT');
 	}
 
 	/**
@@ -247,15 +267,50 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		return $this->query($qry)->fetchColumn();
+		return $this->query($qry, $table, 'SELECT')->fetchColumn();
 	}
 
 	/**
 	 * @param string $query
+	 * @param string|null $table
+	 * @param string|null $type
+	 * @param array $options
 	 * @return \PDOStatement
+	 * @throws \Exception
 	 */
-	public function query(string $query): \PDOStatement
+	public function query(string $query, string $table = null, string $type = null, array $options = []): \PDOStatement
 	{
+		$options = array_merge([
+			'query-limit' => true,
+		], $options);
+
+		if ($options['query-limit']) {
+			if ($this->config['limits']['query']) {
+				if (!isset($this->query_counters['query'][$query]))
+					$this->query_counters['query'][$query] = 0;
+				$this->query_counters['query'][$query]++;
+
+				if ($this->query_counters['query'][$query] > $this->config['limits']['query'])
+					throw new \Exception('Query limit (per query) exceeded. - ' . $query);
+			}
+
+			if ($this->config['limits']['table'] and $table !== null) {
+				if (!isset($this->query_counters['table'][$table]))
+					$this->query_counters['table'][$table] = 0;
+				$this->query_counters['table'][$table]++;
+
+				if ($this->query_counters['table'][$table] > $this->config['limits']['table'])
+					throw new \Exception('Query limit (per table "' . $table . '") exceeded. - ' . $query);
+			}
+
+			if ($this->config['limits']['total']) {
+				$this->query_counters['total']++;
+
+				if ($this->query_counters['total'] > $this->config['limits']['total'])
+					throw new \Exception('Total query limit exceeded');
+			}
+		}
+
 		return $this->db->query($query);
 	}
 
