@@ -12,8 +12,8 @@ class DbConnection
 
 	private int $c_transactions = 0;
 	private array $query_counters = [
-		'query' => 0,
-		'table' => 0,
+		'query' => [],
+		'table' => [],
 		'total' => 0,
 	];
 
