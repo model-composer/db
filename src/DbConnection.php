@@ -110,13 +110,9 @@ class DbConnection
 	public function select(string $table, array|int $where = [], array $options = []): ?array
 	{
 		$options['limit'] = 1;
-		$qry = $this->builder->select($table, $where, $options);
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
-
-		$result = $this->query($qry, $table, 'SELECT')->fetch();
-
-		return $result ? $this->normalizeRowValues($table, $result) : null;
+		$options['stream'] = false;
+		$response = $this->selectAll($table, $where, $options);
+		return $response ? $response[0] : null;
 	}
 
 	/**
