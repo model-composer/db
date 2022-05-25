@@ -14,6 +14,7 @@
     "require": {
         "ext-pdo": "*",
         "model/query-builder": "^0.1.7",
-        "model/db-parser": "^0.1.6"
+        "model/db-parser": "^0.1.6",
+        "model/cache": "^0.3.2"
     }
 }
