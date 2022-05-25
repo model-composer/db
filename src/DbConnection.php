@@ -453,7 +453,7 @@ class DbConnection
 	private function tableChanged(string $table): void
 	{
 		$cache = Cache::getCacheAdapter();
-		$cache->invalidateTags(['model.db.cache.tables.' . $table]);
+		$cache->invalidateTags(['db.cache.tables.' . $table]);
 		if (isset($this->inMemoryCache[$table]))
 			unset($this->inMemoryCache[$table]);
 	}
