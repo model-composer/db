@@ -145,6 +145,12 @@ class Db
 					return $config;
 				},
 			],
+		], [
+			'databases.*.host',
+			'databases.*.port',
+			'databases.*.username',
+			'databases.*.password',
+			'databases.*.name',
 		]);
 	}
 }
