@@ -63,13 +63,13 @@ class Db
 			if (!$database['migrations_folder'])
 				continue;
 
-			$appRoot = self::getProjectRoot();
-			if (!is_dir($appRoot . $database['migrations_folder']))
-				mkdir($appRoot . $database['migrations_folder']);
+			$migrationsDir = realpath(self::getProjectRoot() . $database['migrations_folder']);
+			if (!is_dir($migrationsDir))
+				mkdir($migrationsDir);
 
 			$phinxConfig = [
 				'paths' => [
-					'migrations' => $appRoot . '/migrations',
+					'migrations' => $migrationsDir,
 				],
 				'environments' => [
 					"production" => [
@@ -84,7 +84,7 @@ class Db
 				],
 			];
 
-			$phinxConfigFile = $appRoot . $database['migrations_folder'] . DIRECTORY_SEPARATOR . 'tmp_config_' . $databaseName . '.php';
+			$phinxConfigFile = $migrationsDir . DIRECTORY_SEPARATOR . 'tmp_config_' . $databaseName . '.php';
 			file_put_contents($phinxConfigFile, "<?php\nreturn " . var_export($phinxConfig, true) . ";\n");
 
 			$app = new PhinxApplication();
