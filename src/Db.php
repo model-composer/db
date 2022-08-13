@@ -52,6 +52,19 @@ class Db
 	}
 
 	/**
+	 * @param string $db
+	 * @return void
+	 * @throws \Exception
+	 */
+	public static function removeDatabase(string $db): void
+	{
+		$config = self::getConfig();
+		if (isset($config['databases'][$db]))
+			unset($config['databases'][$db]);
+		Config::set('db', $config);
+	}
+
+	/**
 	 * Executes migrations
 	 *
 	 * @return void
