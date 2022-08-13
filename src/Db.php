@@ -114,7 +114,7 @@ class Db
 	 * @return array
 	 * @throws \Exception
 	 */
-	private static function getConfig(): array
+	public static function getConfig(): array
 	{
 		return Config::get('db', [
 			[
