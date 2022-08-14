@@ -459,13 +459,13 @@ class DbConnection
 	}
 
 	/**
-	 * @param string $k
-	 * @param array $options
+	 * @param string $column
+	 * @param string|null $table
 	 * @return string
 	 */
-	public function parseColumn(string $k, array $options = []): string
+	public function parseColumn(string $column, ?string $table = null): string
 	{
-		return $this->builder->parseColumn($k, $options);
+		return $this->builder->parseColumn($column, $table);
 	}
 
 	/**

@@ -13,7 +13,7 @@
     },
     "require": {
         "ext-pdo": "*",
-        "model/query-builder": "^0.2.0",
+        "model/query-builder": "^0.3.0",
         "model/db-parser": "^0.1.6",
         "model/cache": "^0.3.2",
         "robmorgan/phinx": "^0.12.0"
