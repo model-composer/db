@@ -76,7 +76,7 @@ class Db
 			if (!$database['migrations_folder'])
 				continue;
 
-			$migrationsDir = realpath(self::getProjectRoot() . $database['migrations_folder']);
+			$migrationsDir = self::getProjectRoot() . $database['migrations_folder'];
 			if (!is_dir($migrationsDir))
 				mkdir($migrationsDir);
 
@@ -85,7 +85,7 @@ class Db
 					'migrations' => $migrationsDir,
 				],
 				'environments' => [
-					"production" => [
+					'production' => [
 						'adapter' => 'mysql',
 						'host' => $database['host'],
 						'port' => $database['port'],
@@ -135,6 +135,19 @@ class Db
 				'migration' => function (array $config, string $env) {
 					if ($config) // Already existing
 						return $config;
+
+					if (defined('INCLUDE_PATH') and file_exists(INCLUDE_PATH . 'app/config/Db/config.php')) {
+						// ModEl 3 migration
+						require(INCLUDE_PATH . 'app/config/Db/config.php');
+
+						foreach ($config['databases'] as &$databaseConfig) {
+							$databaseConfig['port'] = 3306;
+							$databaseConfig['name'] = $databaseConfig['database'];
+							unset($databaseConfig['database']);
+						}
+
+						return $config;
+					}
 
 					return [
 						'databases' => [
