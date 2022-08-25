@@ -186,13 +186,22 @@ class DbConnection
 
 	/**
 	 * @param string $table
+	 * @return string
+	 */
+	private function getCacheKeyFor(string $table): string
+	{
+		return 'model.db.cache.tables.' . $this->config['host'] . '.' . $this->config['name'] . '.' . $table;
+	}
+
+	/**
+	 * @param string $table
 	 * @param array|int $where
 	 * @param array $options
 	 * @return array
 	 */
 	private function selectFromCache(string $table, array|int $where = [], array $options = []): array
 	{
-		$rows = $this->getItemFromCache($table, 'model.db.cache.tables.' . $table . '.rows', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
+		$rows = $this->getItemFromCache($table, $this->getCacheKeyFor($table) . '.rows', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
 			$item->tag(['db.cache.tables', 'db.cache.tables.' . $table]);
 			$item->expiresAfter(3600 * 24);
 
@@ -381,7 +390,7 @@ class DbConnection
 	{
 		if (empty($where) and empty($options)) {
 			// Simple counts are cached
-			return (int)$this->getItemFromCache($table, 'model.db.cache.tables.' . $table . '.count', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
+			return (int)$this->getItemFromCache($table, $this->getCacheKeyFor($table) . '.count', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
 				$item->tag(['db.cache.tables', 'db.cache.tables.' . $table]);
 				$item->expiresAfter(3600 * 24);
 				return $this->count($table, [], ['cache' => false]);
