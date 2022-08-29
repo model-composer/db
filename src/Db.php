@@ -1,6 +1,7 @@
 <?php namespace Model\Db;
 
 use Model\Config\Config;
+use Model\ProvidersFinder\Providers;
 use Phinx\Console\PhinxApplication;
 use Phinx\Wrapper\TextWrapper;
 
@@ -71,18 +72,35 @@ class Db
 	 */
 	public static function migrate(): void
 	{
+		$packagesWithProvider = Providers::find('DbProvider');
+
 		$config = self::getConfig();
 		foreach ($config['databases'] as $databaseName => $database) {
-			if (!$database['migrations_folder'])
-				continue;
+			$paths = $database['migrations'] ?: [];
+			foreach ($paths as &$path) {
+				$path = self::getProjectRoot() . $path;
+				if (!is_dir($path))
+					mkdir($path);
+			}
+			unset($path);
 
-			$migrationsDir = self::getProjectRoot() . $database['migrations_folder'];
-			if (!is_dir($migrationsDir))
-				mkdir($migrationsDir);
+			foreach ($packagesWithProvider as $package) {
+				$packageMigrations = $package['provider']::getMigrationsPaths();
+				foreach ($packageMigrations as $packageMigration) {
+					if (
+						(empty($packageMigration['dbs']) or in_array($databaseName, $packageMigration['dbs']))
+						and (!$packageMigration['except'] or !in_array($databaseName, $packageMigration['except']))
+					)
+						$paths[] = $packageMigration['path'];
+				}
+			}
+
+			if (count($paths) === 0)
+				continue;
 
 			$phinxConfig = [
 				'paths' => [
-					'migrations' => $migrationsDir,
+					'migrations' => array_unique($paths),
 				],
 				'environments' => [
 					'production' => [
@@ -97,7 +115,7 @@ class Db
 				],
 			];
 
-			$phinxConfigFile = $migrationsDir . DIRECTORY_SEPARATOR . 'tmp_config_' . $databaseName . '.php';
+			$phinxConfigFile = tempnam(sys_get_temp_dir(), 'tmp_config_' . $databaseName . '.php');
 			file_put_contents($phinxConfigFile, "<?php\nreturn " . var_export($phinxConfig, true) . ";\n");
 
 			$app = new PhinxApplication();
@@ -167,6 +185,19 @@ class Db
 				'migration' => function (array $config, string $env) {
 					foreach ($config['databases'] as &$database)
 						$database['migrations_folder'] = 'migrations';
+
+					return $config;
+				},
+			],
+			[
+				'version' => '0.4.0',
+				'migration' => function (array $config, string $env) {
+					foreach ($config['databases'] as &$database) {
+						$database['migrations'] = [
+							$database['migrations_folder'],
+						];
+						unset($database['migrations_folder']);
+					}
 
 					return $config;
 				},
