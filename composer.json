@@ -17,6 +17,6 @@
         "model/db-parser": "^0.1.6",
         "model/cache": "^0.3.2",
         "robmorgan/phinx": "^0.12.0",
-        "model/providers-finder": "^0.0.1"
+        "model/providers-finder": "^0.1.0"
     }
 }
