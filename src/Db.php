@@ -89,7 +89,7 @@ class Db
 				foreach ($packageMigrations as $packageMigration) {
 					if (
 						(empty($packageMigration['dbs']) or in_array($databaseName, $packageMigration['dbs']))
-						and (!$packageMigration['except'] or !in_array($databaseName, $packageMigration['except']))
+						and (empty($packageMigration['except']) or !in_array($databaseName, $packageMigration['except']))
 					)
 						$paths[] = $packageMigration['path'];
 				}
