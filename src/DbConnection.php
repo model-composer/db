@@ -60,7 +60,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		$this->query($qry, $table, 'INSERT');
+		$this->query($qry, $table, 'INSERT', $options);
 		return $this->db->lastInsertId();
 	}
 
@@ -83,7 +83,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		return $this->query($qry, $table, 'UPDATE');
+		return $this->query($qry, $table, 'UPDATE', $options);
 	}
 
 	/**
@@ -101,7 +101,7 @@ class DbConnection
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		return $this->query($qry, $table, 'DELETE');
+		return $this->query($qry, $table, 'DELETE', $options);
 	}
 
 	/**
@@ -134,7 +134,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		$response = $this->query($qry, $table, 'SELECT');
+		$response = $this->query($qry, $table, 'SELECT', $options);
 
 		$results = $this->streamResults($table, $response);
 
@@ -305,7 +305,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		return $this->query($qry, null, 'SELECT');
+		return $this->query($qry, null, 'SELECT', $options);
 	}
 
 	/**
@@ -402,7 +402,7 @@ class DbConnection
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
 
-		return $this->query($qry, $table, 'SELECT')->fetchColumn();
+		return $this->query($qry, $table, 'SELECT', $options)->fetchColumn();
 	}
 
 	/**
