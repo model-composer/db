@@ -41,7 +41,7 @@ class DbConnection
 			\PDO::ATTR_STRINGIFY_FETCHES => false,
 		]);
 
-		$this->parser = new Parser($this->db);
+		$this->parser = new Parser($this->db, $this->config['host'] . '.' . $this->config['name']);
 		$this->builder = new QueryBuilder($this->parser);
 	}
 
