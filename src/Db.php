@@ -9,6 +9,7 @@ class Db
 {
 	/** @var DbConnection[] */
 	private static array $connections = [];
+	private static bool $registeredShutdown = false;
 
 	/**
 	 * @param string $name
@@ -24,6 +25,18 @@ class Db
 
 		if (!isset($config['databases'][$name]))
 			throw new \Exception('Db "' . $name . '" not found in config');
+
+		if (!self::$registeredShutdown) {
+			register_shutdown_function(function () {
+				$connections = self::getConnections();
+				foreach ($connections as $connection) {
+					if ($connection->inTransaction())
+						$connection->commit();
+				}
+			});
+
+			self::$registeredShutdown = true;
+		}
 
 		self::$connections[$name] = new DbConnection($config['databases'][$name]);
 		return self::$connections[$name];
