@@ -201,11 +201,10 @@ class DbConnection
 	 */
 	private function selectFromCache(string $table, array|int $where = [], array $options = []): array
 	{
-		$rows = $this->getItemFromCache($table, $this->getCacheKeyFor($table) . '.rows', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
-			$item->tag(['db.cache.tables', 'db.cache.tables.' . $table]);
+		$cacheKey = $this->getCacheKeyFor($table) . '.rows';
+		$rows = $this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table, $cacheKey) {
 			$item->expiresAfter(3600 * 24);
-
-			Cache::registerInvalidation('tag', ['db.cache.tables']);
+			Cache::registerInvalidation('keys', [$cacheKey]);
 
 			$tableModel = $this->parser->getTable($table);
 
@@ -390,8 +389,9 @@ class DbConnection
 	{
 		if (empty($where) and empty($options)) {
 			// Simple counts are cached
-			return (int)$this->getItemFromCache($table, $this->getCacheKeyFor($table) . '.count', function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
-				$item->tag(['db.cache.tables', 'db.cache.tables.' . $table]);
+			$cacheKey = $this->getCacheKeyFor($table) . '.count';
+			return (int)$this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table, $cacheKey) {
+				Cache::registerInvalidation('keys', [$cacheKey]);
 				$item->expiresAfter(3600 * 24);
 				return $this->count($table, [], ['cache' => false]);
 			});
@@ -462,7 +462,10 @@ class DbConnection
 	private function tableChanged(string $table): void
 	{
 		$cache = Cache::getCacheAdapter();
-		$cache->invalidateTags(['db.cache.tables.' . $table]);
+		$cache->deleteItems([
+			$this->getCacheKeyFor($table) . '.rows',
+			$this->getCacheKeyFor($table) . '.count',
+		]);
 		if (isset($this->inMemoryCache[$table]))
 			unset($this->inMemoryCache[$table]);
 	}
