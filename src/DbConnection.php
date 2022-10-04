@@ -20,6 +20,8 @@ class DbConnection
 		'total' => 0,
 	];
 
+	protected array $deferedInserts = [];
+
 	public function __construct(array $config)
 	{
 		$this->config = array_merge([
@@ -49,10 +51,38 @@ class DbConnection
 	 * @param string $table
 	 * @param array $data
 	 * @param array $options
-	 * @return int
+	 * @return int|null
 	 */
-	public function insert(string $table, array $data = [], array $options = []): int
+	public function insert(string $table, array $data = [], array $options = []): ?int
 	{
+		$options = array_merge([
+			'defer' => null,
+		], $options);
+
+		if ($options['defer'] !== null) {
+			if ($options['defer'] === true)
+				$options['defer'] = 0;
+			if (!is_numeric($options['defer']))
+				throw new \Exception('Invalid defer value');
+			$options['defer'] = (int)$options['defer'];
+
+			if (!isset($this->deferedInserts[$table])) {
+				$this->deferedInserts[$table] = [
+					'options' => $options,
+					'rows' => [],
+				];
+			}
+
+			if ($this->deferedInserts[$table]['options'] !== $options)
+				throw new \Exception('Cannot defer inserts with different options on the same table');
+
+			$this->deferedInserts[$table]['rows'][] = $data['data'];
+			if ($options['defer'] > 0 and count($this->deferedInserts[$table]['rows']) >= $options['defer'])
+				$this->bulkInsert($table);
+
+			return null;
+		}
+
 		$qry = $this->builder->insert($table, $data, $options);
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
@@ -66,6 +96,32 @@ class DbConnection
 
 	/**
 	 * @param string $table
+	 * @return void
+	 */
+	private function bulkInsert(string $table): void
+	{
+		if (!isset($this->deferedInserts[$table]))
+			return;
+
+		$options = $this->deferedInserts[$table]['options'];
+		$options['bulk'] = true;
+
+		$qry = $this->builder->insert($table, $this->deferedInserts[$table]['rows'], $options);
+		if ($qry) {
+			if ($options['debug'] ?? false)
+				echo "QUERY: " . $qry . "\n";
+
+			if (!$this->inTransaction())
+				$this->beginTransaction();
+
+			$this->query($qry, $table, 'INSERT', $options);
+		}
+
+		unset($this->deferedInserts[$table]);
+	}
+
+	/**
+	 * @param string $table
 	 * @param array|int $where
 	 * @param array $data
 	 * @param array $options
@@ -73,6 +129,9 @@ class DbConnection
 	 */
 	public function update(string $table, array|int $where = [], array $data = [], array $options = []): ?\PDOStatement
 	{
+		if (isset($this->deferedInserts[$table]))
+			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t update');
+
 		$qry = $this->builder->update($table, $where, $data);
 		if ($qry === null)
 			return null;
@@ -94,6 +153,9 @@ class DbConnection
 	 */
 	public function delete(string $table, array|int $where = [], array $options = []): ?\PDOStatement
 	{
+		if (isset($this->deferedInserts[$table]))
+			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t delete');
+
 		$qry = $this->builder->delete($table, $where);
 		if ($options['debug'] ?? false)
 			echo "QUERY: " . $qry . "\n";
@@ -126,6 +188,9 @@ class DbConnection
 	 */
 	public function selectAll(string $table, array|int $where = [], array $options = []): iterable
 	{
+		if (isset($this->deferedInserts[$table]))
+			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
+
 		$cacheable = $this->isSelectCacheable($table, $where, $options);
 		if ($cacheable)
 			return $this->selectFromCache($table, $where, $options);
@@ -537,5 +602,19 @@ class DbConnection
 
 		$this->c_transactions = 0;
 		return false;
+	}
+
+	/**
+	 * @return void
+	 */
+	public function terminate(): void
+	{
+		foreach ($this->deferedInserts as $table => $options) {
+			if (count($options['rows']) > 0)
+				$this->bulkInsert($table);
+		}
+
+		if ($this->inTransaction())
+			$this->commit();
 	}
 }

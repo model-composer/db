@@ -29,10 +29,8 @@ class Db
 		if (!self::$registeredShutdown) {
 			register_shutdown_function(function () {
 				$connections = self::getConnections();
-				foreach ($connections as $connection) {
-					if ($connection->inTransaction())
-						$connection->commit();
-				}
+				foreach ($connections as $connection)
+					$connection->terminate();
 			});
 
 			self::$registeredShutdown = true;
