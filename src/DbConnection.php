@@ -47,6 +47,23 @@ class DbConnection
 		$this->builder = new QueryBuilder($this->parser);
 	}
 
+
+	/**
+	 * @return Parser
+	 */
+	public function getParser(): Parser
+	{
+		return $this->parser;
+	}
+
+	/**
+	 * @return QueryBuilder
+	 */
+	public function getBuilder(): QueryBuilder
+	{
+		return $this->builder;
+	}
+
 	/**
 	 * @param string $table
 	 * @param array $data
