@@ -2,6 +2,7 @@
 
 use Model\Cache\Cache;
 use Model\DbParser\Parser;
+use Model\ProvidersFinder\Providers;
 use Model\QueryBuilder\QueryBuilder;
 
 class DbConnection
@@ -211,6 +212,10 @@ class DbConnection
 		$cacheable = $this->isSelectCacheable($table, $where, $options);
 		if ($cacheable)
 			return $this->selectFromCache($table, $where, $options);
+
+		$providers = Providers::find('DbProvider');
+		foreach ($providers as $provider)
+			[$where, $options] = $provider['provider']::alterSelect($this->config, $table, $where, $options);
 
 		$qry = $this->builder->select($table, $where, $options);
 		if ($options['debug'] ?? false)
