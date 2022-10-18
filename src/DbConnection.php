@@ -230,7 +230,7 @@ class DbConnection
 
 		$providers = Providers::find('DbProvider');
 		foreach ($providers as $provider)
-			[$where, $options] = $provider['provider']::alterSelect($this->config, $table, $where, $options);
+			[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
 
 		$qry = $this->builder->select($table, $where, $options);
 		if ($options['debug'] ?? false)
