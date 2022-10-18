@@ -23,7 +23,7 @@ class DbConnection
 
 	protected array $deferedInserts = [];
 
-	public function __construct(array $config)
+	public function __construct(private readonly string $name, array $config)
 	{
 		$this->config = array_merge([
 			'host' => 'localhost',
@@ -48,6 +48,21 @@ class DbConnection
 		$this->builder = new QueryBuilder($this->parser);
 	}
 
+	/**
+	 * @return string
+	 */
+	public function getName(): string
+	{
+		return $this->name;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function getConfig(): array
+	{
+		return $this->config;
+	}
 
 	/**
 	 * @return Parser

@@ -36,7 +36,7 @@ class Db
 			self::$registeredShutdown = true;
 		}
 
-		self::$connections[$name] = new DbConnection($config['databases'][$name]);
+		self::$connections[$name] = new DbConnection($name, $config['databases'][$name]);
 		return self::$connections[$name];
 	}
 
