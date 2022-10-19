@@ -7,7 +7,7 @@ use Model\QueryBuilder\QueryBuilder;
 
 class DbConnection
 {
-	private readonly array $config;
+	private array $config;
 	private \PDO $db;
 	private Parser $parser;
 	private QueryBuilder $builder;
@@ -553,6 +553,19 @@ class DbConnection
 			$this->tableChanged($table);
 
 		return $this->db->query($query);
+	}
+
+	/**
+	 * @param string $type
+	 * @param int|null $n
+	 * @return void
+	 */
+	public function setQueryLimit(string $type, ?int $n): void
+	{
+		if (!array_key_exists($type, $this->config['limits']))
+			throw new \Exception('Query limit ' . $type . ' not found');
+
+		$this->config['limits'][$type] = $n;
 	}
 
 	/**
