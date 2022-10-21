@@ -238,7 +238,7 @@ class DbConnection
 
 		$response = $this->query($qry, $table, 'SELECT', $options);
 
-		$results = $this->streamResults($table, $response);
+		$results = $this->streamResults($table, $response, $options, $providers);
 
 		if ($options['stream'] ?? true) {
 			return $results;
@@ -437,12 +437,18 @@ class DbConnection
 	 *
 	 * @param string $table
 	 * @param iterable $results
+	 * @param array $options
+	 * @param array $providers
 	 * @return \Generator
 	 */
-	private function streamResults(string $table, iterable $results): \Generator
+	private function streamResults(string $table, iterable $results, array $options, array $providers): \Generator
 	{
-		foreach ($results as $r)
+		foreach ($results as $r) {
+			foreach ($providers as $provider)
+				$r = $provider['provider']::alterSelectResult($this, $table, $r, $options);
+
 			yield $this->normalizeRowValues($table, $r);
+		}
 	}
 
 	/**
@@ -456,9 +462,6 @@ class DbConnection
 
 		$newRow = [];
 		foreach ($row as $k => $v) {
-//			if (strpos($k, 'zkaggr_') === 0) // Remove aggregates prefix // TODO
-//				$k = substr($k, 7);
-
 			if ($v !== null and array_key_exists($k, $tableModel->columns)) {
 				$c = $tableModel->columns[$k];
 				if (in_array($c['type'], ['double', 'float', 'decimal']))

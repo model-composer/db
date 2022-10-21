@@ -8,4 +8,9 @@ abstract class AbstractDbProvider
 	{
 		return [$where, $options];
 	}
+
+	public static function alterSelectResult(DbConnection $db, string $table, array $row, array $options): array
+	{
+		return $row;
+	}
 }
