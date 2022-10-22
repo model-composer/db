@@ -628,21 +628,14 @@ class DbConnection
 		if (!isset($this->tablesCache[$name])) {
 			$tableModel = clone $this->parser->getTable($name);
 
-			$customTableModel = null;
 			if (array_key_exists($name, $this->config['linked_tables'])) {
-				$customTableModel = clone $this->parser->getTable($this->config['linked_tables'][$name]);
-			} elseif (class_exists('\\Model\\Multilang\\Ml')) {
-				$mlTables = \Model\Multilang\Ml::getTables($this);
-				foreach ($mlTables as $mlTable => $mlTableOptions) {
-					if ($mlTable . $mlTableOptions['table_suffix'] === $name and array_key_exists($mlTable, $this->config['linked_tables'])) {
-						$customTableModel = clone $this->parser->getTable($this->config['linked_tables'][$mlTable] . $mlTableOptions['table_suffix']);
-						break;
-					}
-				}
+				$customTableModel = $this->parser->getTable($this->config['linked_tables'][$name]);
+				$tableModel->loadColumns($customTableModel->columns, false);
 			}
 
-			if ($customTableModel)
-				$tableModel->loadColumns($customTableModel->columns, false);
+			$providers = Providers::find('DbProvider');
+			foreach ($providers as $provider)
+				$tableModel = $provider['provider']::alterTableModel($this, $name, clone $tableModel);
 
 			$this->tablesCache[$name] = $tableModel;
 		}
