@@ -213,6 +213,19 @@ class Db
 					return $config;
 				},
 			],
+			[
+				'version' => '0.5.6',
+				'migration' => function (array $config, string $env) {
+					foreach ($config['databases'] as &$database) {
+						if (isset($database['linked-tables'])) {
+							$database['linked_tables'] = $database['linked-tables'];
+							unset($database['linked-tables']);
+						}
+					}
+
+					return $config;
+				},
+			],
 		], [
 			'databases.*.host',
 			'databases.*.port',

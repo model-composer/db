@@ -2,6 +2,7 @@
 
 use Model\Cache\Cache;
 use Model\DbParser\Parser;
+use Model\DbParser\Table;
 use Model\ProvidersFinder\Providers;
 use Model\QueryBuilder\QueryBuilder;
 
@@ -21,6 +22,9 @@ class DbConnection
 		'total' => 0,
 	];
 
+	/** @var Table[] */
+	private array $tablesCache = [];
+
 	protected array $deferedInserts = [];
 
 	public function __construct(private readonly string $name, array $config)
@@ -36,7 +40,13 @@ class DbConnection
 				'table' => 10000,
 				'total' => null,
 			],
+			'linked_tables' => [],
 		], $config);
+
+		$linkedTables = [];
+		foreach ($this->config['linked_tables'] as $k => $v)
+			$linkedTables[$v] = is_numeric($k) ? $v . '_custom' : $v;
+		$this->config['linked_tables'] = $linkedTables;
 
 		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=utf8', $this->config['username'], $this->config['password'], [
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
@@ -458,7 +468,7 @@ class DbConnection
 	 */
 	private function normalizeRowValues(string $table, array $row): array
 	{
-		$tableModel = $this->parser->getTable($table);
+		$tableModel = $this->getTable($table);
 
 		$newRow = [];
 		foreach ($row as $k => $v) {
@@ -607,6 +617,37 @@ class DbConnection
 	public function parseValue(mixed $v, ?string $type = null): string
 	{
 		return $this->builder->parseValue($v, $type);
+	}
+
+	/**
+	 * @param string $name
+	 * @return Table
+	 */
+	public function getTable(string $name): Table
+	{
+		if (!isset($this->tablesCache[$name])) {
+			$tableModel = clone $this->parser->getTable($name);
+
+			$customTableModel = null;
+			if (array_key_exists($name, $this->config['linked_tables'])) {
+				$customTableModel = clone $this->parser->getTable($this->config['linked_tables'][$name]);
+			} elseif (class_exists('\\Model\\Multilang\\Ml')) {
+				$mlTables = \Model\Multilang\Ml::getTables($this);
+				foreach ($mlTables as $mlTable => $mlTableOptions) {
+					if ($mlTable . $mlTableOptions['table_suffix'] === $name and array_key_exists($mlTable, $this->config['linked_tables'])) {
+						$customTableModel = clone $this->parser->getTable($this->config['linked_tables'][$mlTable] . $mlTableOptions['table_suffix']);
+						break;
+					}
+				}
+			}
+
+			if ($customTableModel)
+				$tableModel->loadColumns($customTableModel->columns, false);
+
+			$this->tablesCache[$name] = $tableModel;
+		}
+
+		return $this->tablesCache[$name];
 	}
 
 	/**
