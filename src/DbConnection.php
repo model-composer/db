@@ -43,6 +43,10 @@ class DbConnection
 			'linked_tables' => [],
 		], $config);
 
+		$providers = Providers::find('DbProvider');
+		foreach ($providers as $provider)
+			$this->config['linked_tables'] = array_merge($this->config['linked_tables'], $provider['provider']::linkedTables()[$name] ?? []);
+
 		$linkedTables = [];
 		foreach ($this->config['linked_tables'] as $k => $v)
 			$linkedTables[$v] = is_numeric($k) ? $v . '_custom' : $v;
