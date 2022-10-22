@@ -1,16 +1,11 @@
 <?php namespace Model\Db;
 
-use Model\Core\ModelProviderInterface;
+use Model\Core\AbstractModelProvider;
 
-class ModelProvider implements ModelProviderInterface
+class ModelProvider extends AbstractModelProvider
 {
 	public static function realign(): void
 	{
 		Db::migrate();
-	}
-
-	public static function getDependencies(): array
-	{
-		return [];
 	}
 }
