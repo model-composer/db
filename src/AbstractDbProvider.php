@@ -1,8 +1,9 @@
 <?php namespace Model\Db;
 
 use Model\DbParser\Table;
+use Model\ProvidersFinder\AbstractProvider;
 
-abstract class AbstractDbProvider
+abstract class AbstractDbProvider extends AbstractProvider
 {
 	public static function getMigrationsPaths(): array
 	{
