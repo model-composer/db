@@ -40,17 +40,7 @@ class DbConnection
 				'table' => 10000,
 				'total' => null,
 			],
-			'linked_tables' => [],
 		], $config);
-
-		$providers = Providers::find('DbProvider');
-		foreach ($providers as $provider)
-			$this->config['linked_tables'] = array_merge($this->config['linked_tables'], $provider['provider']::linkedTables()[$name] ?? []);
-
-		$linkedTables = [];
-		foreach ($this->config['linked_tables'] as $k => $v)
-			$linkedTables[$v] = is_numeric($k) ? $v . '_custom' : $v;
-		$this->config['linked_tables'] = $linkedTables;
 
 		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=utf8', $this->config['username'], $this->config['password'], [
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
@@ -631,11 +621,6 @@ class DbConnection
 	{
 		if (!isset($this->tablesCache[$name])) {
 			$tableModel = clone $this->parser->getTable($name);
-
-			if (array_key_exists($name, $this->config['linked_tables'])) {
-				$customTableModel = $this->parser->getTable($this->config['linked_tables'][$name]);
-				$tableModel->loadColumns($customTableModel->columns, false);
-			}
 
 			$providers = Providers::find('DbProvider');
 			foreach ($providers as $provider)

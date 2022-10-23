@@ -9,11 +9,6 @@ abstract class AbstractDbProvider
 		return [];
 	}
 
-	public static function linkedTables(): array
-	{
-		return [];
-	}
-
 	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
 	{
 		return [$where, $options];
