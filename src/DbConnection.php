@@ -121,8 +121,6 @@ class DbConnection
 		}
 
 		$qry = $this->builder->insert($table, $data, $options);
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
 
 		if (!$this->inTransaction())
 			$this->beginTransaction();
@@ -145,9 +143,6 @@ class DbConnection
 
 		$qry = $this->builder->insert($table, $this->deferedInserts[$table]['rows'], $options);
 		if ($qry) {
-			if ($options['debug'] ?? false)
-				echo "QUERY: " . $qry . "\n";
-
 			if (!$this->inTransaction())
 				$this->beginTransaction();
 
@@ -173,9 +168,6 @@ class DbConnection
 		if ($qry === null)
 			return null;
 
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
-
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
@@ -194,8 +186,6 @@ class DbConnection
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t delete');
 
 		$qry = $this->builder->delete($table, $where);
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
 
 		if (!$this->inTransaction())
 			$this->beginTransaction();
@@ -237,8 +227,6 @@ class DbConnection
 			[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
 
 		$qry = $this->builder->select($table, $where, $options);
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
 
 		$response = $this->query($qry, $table, 'SELECT', $options);
 
@@ -407,9 +395,6 @@ class DbConnection
 		if (($options['limit'] ?? null) !== null)
 			$qry .= ' LIMIT ' . $options['limit'];
 
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
-
 		return $this->query($qry, null, 'SELECT', $options);
 	}
 
@@ -525,10 +510,14 @@ class DbConnection
 	public function query(string $query, string $table = null, string $type = null, array $options = []): \PDOStatement
 	{
 		$options = array_merge([
-			'query-limit' => true,
+			'query_limit' => true,
+			'debug' => false,
 		], $options);
 
-		if ($options['query-limit']) {
+		if ($options['debug'] ?? false)
+			echo "QUERY: " . $query . "\n";
+
+		if ($options['query_limit']) {
 			if ($this->config['limits']['query']) {
 				if (!isset($this->query_counters['query'][$query]))
 					$this->query_counters['query'][$query] = 0;
