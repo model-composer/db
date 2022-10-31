@@ -546,7 +546,7 @@ class DbConnection
 
 		// Cache invalidation for that specific table
 		if ($table and $type !== 'SELECT')
-			$this->tableChanged($table);
+			$this->changedTable($table);
 
 		return $this->db->query($query);
 	}
@@ -570,7 +570,7 @@ class DbConnection
 	 * @param string $table
 	 * @return void
 	 */
-	private function tableChanged(string $table): void
+	public function changedTable(string $table): void
 	{
 		$cache = Cache::getCacheAdapter();
 		$cache->deleteItems([
