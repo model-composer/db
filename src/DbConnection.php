@@ -164,7 +164,10 @@ class DbConnection
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t update');
 
-		$qry = $this->builder->update($table, $where, $data);
+		if (empty($where) and !($options['confirm'] ?? false))
+			throw new \Exception('Tried to update full table without explicit confirm');
+
+		$qry = $this->builder->update($table, $where, $data, $options);
 		if ($qry === null)
 			return null;
 
@@ -184,6 +187,9 @@ class DbConnection
 	{
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t delete');
+
+		if (empty($where) and !($options['confirm'] ?? false))
+			throw new \Exception('Tried to delete full table without explicit confirm');
 
 		$providers = Providers::find('DbProvider');
 		foreach ($providers as $provider)
