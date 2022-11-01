@@ -10,6 +10,11 @@ abstract class AbstractDbProvider extends AbstractProvider
 		return [];
 	}
 
+	public static function alterDelete(DbConnection $db, string $table, array $where, array $options): array
+	{
+		return [$where, $options];
+	}
+
 	public static function alterSelect(DbConnection $db, string $table, array $where, array $options): array
 	{
 		return [$where, $options];

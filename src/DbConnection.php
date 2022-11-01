@@ -185,12 +185,31 @@ class DbConnection
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t delete');
 
-		$qry = $this->builder->delete($table, $where);
+		$providers = Providers::find('DbProvider');
+		foreach ($providers as $provider)
+			[$where, $options] = $provider['provider']::alterDelete($this, $table, $where, $options);
+
+		$qry = $this->builder->delete($table, $where, $options);
 
 		if (!$this->inTransaction())
 			$this->beginTransaction();
 
-		return $this->query($qry, $table, 'DELETE', $options);
+		try {
+			return $this->query($qry, $table, 'DELETE', $options);
+		} catch (\Exception $e) {
+			$message = $e->getMessage();
+			if (stripos($message, 'a foreign key constraint fails') !== false) {
+				preg_match_all('/`([^`]+?)`, CONSTRAINT `(.+?)` FOREIGN KEY \(`(.+?)`\) REFERENCES `(.+?)` \(`(.+?)`\)/i', $message, $matches, PREG_SET_ORDER);
+
+				if (count($matches[0]) == 6) {
+					$fk = $matches[0];
+					$message = 'You\'re trying to delete a row from table "<b>' . $fk[4] . '</b>" that is referenced in the table "<b>' . $fk[1] . '</b>", in "<b>' . $fk[3] . '</b>" field';
+					throw new \Exception($message);
+				}
+			}
+
+			throw $e;
+		}
 	}
 
 	/**
