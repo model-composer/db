@@ -312,9 +312,23 @@ class DbConnection
 		if (($options['order_by'] ?? null) and !is_array($options['order_by']))
 			return false;
 
-		// If limit is used, only normal limits are accepted
-		if (($options['limit'] ?? null) and !preg_match('/^[0-9]+(, ?[0-9+])?$/', $options['limit']))
+		// Query with offset are currently not cacheables
+		if ($options['offset'] ?? null)
 			return false;
+
+		// Query with aggregations are currently not cacheables
+		$aggregations = [
+			'min',
+			'max',
+			'sum',
+			'avg',
+			'count',
+		];
+
+		foreach ($aggregations as $f) {
+			if ($options[$f] ?? null)
+				return false;
+		}
 
 		// Only tables with no more than 200 rows are cached
 		if ($this->count($table) > 200)
@@ -538,6 +552,7 @@ class DbConnection
 
 		$options['count'] = ['id' => 'MODEL_COUNT'];
 		$options['fields'] = [];
+		$options['cache'] = false;
 		$selectResponse = $this->select($table, $where, $options);
 		return $selectResponse['MODEL_COUNT'];
 	}
