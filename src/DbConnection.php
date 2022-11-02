@@ -323,6 +323,7 @@ class DbConnection
 			'sum',
 			'avg',
 			'count',
+			'count_distinct',
 		];
 
 		foreach ($aggregations as $f) {
@@ -550,7 +551,19 @@ class DbConnection
 			});
 		}
 
-		$options['count'] = ['id' => 'MODEL_COUNT'];
+		if (isset($options['group_by'])) {
+			if (is_array($options['group_by']) and count($options['group_by']) > 1)
+				throw new \Exception('You cannot count rows grouped by more than one column');
+
+			if (is_array($options['group_by']))
+				$options['group_by'] = $options['group_by'][0];
+
+			$options['count_distinct'] = [$options['group_by'] => 'MODEL_COUNT'];
+			unset($options['group_by']);
+		} else {
+			$options['count'] = ['id' => 'MODEL_COUNT'];
+		}
+
 		$options['fields'] = [];
 		$options['cache'] = false;
 		$selectResponse = $this->select($table, $where, $options);
