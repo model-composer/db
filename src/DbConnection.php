@@ -551,7 +551,7 @@ class DbConnection
 			});
 		}
 
-		if (isset($options['group_by'])) {
+		if ($options['group_by'] ?? null) {
 			if (is_array($options['group_by']) and count($options['group_by']) > 1)
 				throw new \Exception('You cannot count rows grouped by more than one column');
 
