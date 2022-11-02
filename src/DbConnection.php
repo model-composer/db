@@ -536,12 +536,10 @@ class DbConnection
 			});
 		}
 
-		$options['fields'] = 'COUNT(*)';
-		$qry = $this->builder->select($table, $where, $options);
-		if ($options['debug'] ?? false)
-			echo "QUERY: " . $qry . "\n";
-
-		return $this->query($qry, $table, 'SELECT', $options)->fetchColumn();
+		$options['count'] = ['id' => 'MODEL_COUNT'];
+		$options['fields'] = [];
+		$selectResponse = $this->select($table, $where, $options);
+		return $selectResponse['MODEL_COUNT'];
 	}
 
 	/**
