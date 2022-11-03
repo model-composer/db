@@ -85,6 +85,14 @@ class DbConnection
 	}
 
 	/**
+	 * @return \PDO
+	 */
+	public function getDb(): \PDO
+	{
+		return $this->db;
+	}
+
+	/**
 	 * @param string $table
 	 * @param array $data
 	 * @param array $options
