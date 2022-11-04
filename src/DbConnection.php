@@ -271,13 +271,13 @@ class DbConnection
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
 
-		$cacheable = $this->isSelectCacheable($table, $where, $options);
-		if ($cacheable)
-			return $this->selectFromCache($table, $where, $options);
-
 		$providers = Providers::find('DbProvider');
 		foreach ($providers as $provider)
 			[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
+
+		$cacheable = $this->isSelectCacheable($table, $where, $options);
+		if ($cacheable)
+			return $this->selectFromCache($table, $where, $options);
 
 		$qry = $this->builder->select($table, $where, $options);
 
