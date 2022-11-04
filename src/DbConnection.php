@@ -275,6 +275,13 @@ class DbConnection
 		foreach ($providers as $provider)
 			[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
 
+		$convertibleOptions = ['order_by', 'group_by'];
+		foreach ($convertibleOptions as $convertibleOption) {
+			// Backward compatibility: ff one of these options is a string with just a field name on it, it can be written in the new array form
+			if (!empty($options[$convertibleOption]) and is_string($options[$convertibleOption]) and preg_match('/^[a-z0-9_]+$/i', $options[$convertibleOption]))
+				$options[$convertibleOption] = [$options[$convertibleOption]];
+		}
+
 		$cacheable = $this->isSelectCacheable($table, $where, $options);
 		if ($cacheable)
 			return $this->selectFromCache($table, $where, $options);
@@ -313,7 +320,7 @@ class DbConnection
 			return false;
 
 		// Only simple queries can be cached
-		if (!empty($options['joins']) or !empty($options['fields']) or !empty($options['group_by']))
+		if (!empty($options['joins']) or !empty($options['group_by']))
 			return false;
 
 		// If order_by is used, only array form is cacheable
@@ -407,7 +414,19 @@ class DbConnection
 			}
 		}
 
-		return $rows;
+		if (!isset($options['fields'])) {
+			return $rows;
+		} else {
+			$newRows = [];
+			foreach ($rows as $r) {
+				$newItem = [];
+				foreach ($options['fields'] as $f)
+					$newItem[$f] = $r[$f];
+				$newRows[] = $newItem;
+			}
+
+			return $newRows;
+		}
 	}
 
 	/**
