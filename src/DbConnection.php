@@ -454,58 +454,8 @@ class DbConnection
 	 */
 	public function unionSelect(array $queries, array $options = []): iterable
 	{
-		$qry_str = [];
-		foreach ($queries as $qryOptions) {
-			$copiedQueryOptions = $options;
-			if (isset($copiedQueryOptions['order_by']))
-				unset($copiedQueryOptions['order_by']);
-			if (isset($copiedQueryOptions['limit']))
-				unset($copiedQueryOptions['limit']);
-
-			$singleQueryOptions = $qryOptions['options'] ?? [];
-			$copiedQueryOptions = $this->array_merge_recursive_distinct($singleQueryOptions, $copiedQueryOptions);
-			$qry_str[] = $this->builder->select($qryOptions['table'], $qryOptions['where'] ?? [], $copiedQueryOptions);
-		}
-
-		if (empty($qry_str))
-			return [];
-
-		$qry = implode(' UNION ', $qry_str);
-
-		if (($options['order_by'] ?? null) !== null) {
-			if (!is_string($options['order_by']))
-				throw new \Exception('Currently, only strings "order by" are supported in union selects');
-
-			$qry .= ' ORDER BY ' . $options['order_by'];
-		}
-
-		if (($options['limit'] ?? null) !== null)
-			$qry .= ' LIMIT ' . $options['limit'];
-
+		$qry = $this->builder->unionSelect($queries, $options);
 		return $this->query($qry, null, 'SELECT', $options);
-	}
-
-	/**
-	 * Utility per il metodo precedente
-	 *
-	 * @param array $array1
-	 * @param array $array2
-	 * @return array
-	 */
-	private function array_merge_recursive_distinct(array &$array1, array &$array2): array
-	{
-		$merged = $array1;
-
-		foreach ($array2 as $key => &$value) {
-			if (is_numeric($key))
-				$merged[] = $value;
-			elseif (is_array($value) && isset ($merged [$key]) && is_array($merged [$key]))
-				$merged[$key] = $this->array_merge_recursive_distinct($merged [$key], $value);
-			else
-				$merged[$key] = $value;
-		}
-
-		return $merged;
 	}
 
 	/**
