@@ -312,13 +312,16 @@ class DbConnection
 	 */
 	private function isSelectCacheable(string $table, array|int $where = [], array $options = []): bool
 	{
-		// Only full selects or selects by id are cacheable
-		if (is_array($where) and count($where) > 0)
-			return false;
-
 		// If I did request select not to be cached, I return false
 		if (!($options['cache'] ?? true))
 			return false;
+
+		// Only full selects or selects by id are cacheable
+		if (is_array($where) and count($where) > 0) {
+			$tableModel = $this->parser->getTable($table);
+			if (count($where) > 1 or !isset($where[$tableModel->primary[0]]))
+				return false;
+		}
 
 		// Only simple queries can be cached
 		if (!empty($options['joins']) or !empty($options['group_by']))
@@ -382,9 +385,14 @@ class DbConnection
 			return $response;
 		});
 
-		// Select by id
-		if (is_int($where))
+		if (!empty($where)) {
+			if (is_array($where)) {
+				$tableModel = $this->parser->getTable($table);
+				$where = $where[$tableModel->primary[0]];
+			}
+
 			return isset($rows[$where]) ? [$rows[$where]] : [];
+		}
 
 		if ($options['order_by'] ?? null) {
 			usort($rows, function ($a, $b) use ($options) {
