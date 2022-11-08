@@ -327,10 +327,6 @@ class DbConnection
 		if (($options['order_by'] ?? null) and !is_array($options['order_by']))
 			return false;
 
-		// Query with offset are currently not cacheables
-		if ($options['offset'] ?? null)
-			return false;
-
 		// Query with aggregations are currently not cacheables
 		$aggregations = [
 			'min',
@@ -347,7 +343,7 @@ class DbConnection
 		}
 
 		// Only tables with no more than 200 rows are cached
-		if ($this->count($table) > 200)
+		if ($this->count($table) > 300)
 			return false;
 
 		return true;
@@ -405,14 +401,8 @@ class DbConnection
 			$rows = array_values($rows);
 		}
 
-		if ($options['limit'] ?? null) {
-			if (is_numeric($options['limit'])) {
-				$rows = array_slice($rows, 0, $options['limit']);
-			} else {
-				$limit = explode(',', $options['limit']);
-				$rows = array_slice($rows, $limit[0], $limit[1]);
-			}
-		}
+		if ($options['limit'] ?? null)
+			$rows = array_slice($rows, $options['offset'] ?? 0, $options['limit']);
 
 		if (!isset($options['fields'])) {
 			return $rows;
