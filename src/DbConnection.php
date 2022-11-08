@@ -40,6 +40,7 @@ class DbConnection
 				'table' => 10000,
 				'total' => null,
 			],
+			'cache_tables' => [],
 		], $config);
 
 		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=utf8', $this->config['username'], $this->config['password'], [
@@ -342,8 +343,8 @@ class DbConnection
 				return false;
 		}
 
-		// Only tables with no more than 200 rows are cached
-		if ($this->count($table) > 300)
+		// Only tables with no more than 200 rows are cached (along with the ones stated in config)
+		if ($this->count($table) > 200 or in_array($table, $this->config['cache_tables']))
 			return false;
 
 		return true;
