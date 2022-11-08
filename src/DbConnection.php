@@ -344,7 +344,7 @@ class DbConnection
 		}
 
 		// Only tables with no more than 200 rows are cached (along with the ones stated in config)
-		if ($this->count($table) > 200 or in_array($table, $this->config['cache_tables']))
+		if (!in_array($table, $this->config['cache_tables']) and $this->count($table) > 200)
 			return false;
 
 		return true;
