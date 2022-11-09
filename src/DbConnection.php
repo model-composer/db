@@ -319,7 +319,7 @@ class DbConnection
 		// Only full selects or selects by id are cacheable
 		if (is_array($where) and count($where) > 0) {
 			$tableModel = $this->parser->getTable($table);
-			if (count($where) > 1 or !isset($where[$tableModel->primary[0]]))
+			if (count($where) > 1 or !isset($where[$tableModel->primary[0]]) or !is_numeric($where[$tableModel->primary[0]]))
 				return false;
 		}
 
