@@ -105,11 +105,27 @@ class DbConnection
 			'defer' => null,
 		], $options);
 
+		$queries = [
+			[
+				'table' => $table,
+				'data' => $data,
+				'options' => $options,
+			],
+		];
+
+		$providers = Providers::find('DbProvider');
+		foreach ($providers as $provider)
+			$queries = $provider['provider']::alterInsert($this, $queries);
+
 		if ($options['defer'] !== null) {
+			if (count($queries) > 1)
+				throw new \Exception('Cannot defer an insert that needs more than one query');
+
 			if ($options['defer'] === true)
 				$options['defer'] = 0;
 			if (!is_numeric($options['defer']))
 				throw new \Exception('Invalid defer value');
+
 			$options['defer'] = (int)$options['defer'];
 
 			if (!isset($this->deferedInserts[$table])) {
@@ -122,20 +138,32 @@ class DbConnection
 			if ($this->deferedInserts[$table]['options'] !== $options)
 				throw new \Exception('Cannot defer inserts with different options on the same table');
 
-			$this->deferedInserts[$table]['rows'][] = $data['data'];
+			$this->deferedInserts[$table]['rows'][] = $data;
 			if ($options['defer'] > 0 and count($this->deferedInserts[$table]['rows']) >= $options['defer'])
 				$this->bulkInsert($table);
 
 			return null;
 		}
 
-		$qry = $this->builder->insert($table, $data, $options);
+		$ids = [];
+		foreach ($queries as $qryIdx => $query) {
+			foreach (($query['options']['replace_ids'] ?? []) as $replace_id) {
+				if (!isset($ids[$replace_id['from']]))
+					throw new \Exception('Query idx ' . $replace_id['from'] . ' does not exist');
 
-		if (!$this->inTransaction())
-			$this->beginTransaction();
+				$query['data'][$replace_id['field']] = $ids[$replace_id['from']];
+			}
 
-		$this->query($qry, $table, 'INSERT', $options);
-		return $this->db->lastInsertId();
+			$qry = $this->builder->insert($query['table'], $query['data'], $query['options']);
+
+			if (!$this->inTransaction())
+				$this->beginTransaction();
+
+			$this->query($qry, $query['table'], 'INSERT', $query['options']);
+			$ids[$qryIdx] = $this->db->lastInsertId();
+		}
+
+		return $ids[0] ?? null;
 	}
 
 	/**

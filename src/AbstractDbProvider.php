@@ -10,6 +10,11 @@ abstract class AbstractDbProvider extends AbstractProvider
 		return [];
 	}
 
+	public static function alterInsert(DbConnection $db, array $queries): array
+	{
+		return $queries;
+	}
+
 	public static function alterUpdate(DbConnection $db, array $queries): array
 	{
 		return $queries;
