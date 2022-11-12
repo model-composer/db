@@ -170,7 +170,7 @@ class DbConnection
 	 * @param string $table
 	 * @return void
 	 */
-	private function bulkInsert(string $table): void
+	public function bulkInsert(string $table): void
 	{
 		if (!isset($this->deferedInserts[$table]))
 			return;
