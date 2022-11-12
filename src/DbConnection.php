@@ -105,10 +105,12 @@ class DbConnection
 			'defer' => null,
 		], $options);
 
+		$rows = $this->isAssoc($data) ? [$data] : $data;
+
 		$queries = [
 			[
 				'table' => $table,
-				'data' => $data,
+				'rows' => $rows,
 				'options' => $options,
 			],
 		];
@@ -138,7 +140,7 @@ class DbConnection
 			if ($this->deferedInserts[$table]['options'] !== $options)
 				throw new \Exception('Cannot defer inserts with different options on the same table');
 
-			$this->deferedInserts[$table]['rows'][] = $data;
+			$this->deferedInserts[$table]['rows'] = array_merge($this->deferedInserts[$table]['rows'], $rows);
 			if ($options['defer'] > 0 and count($this->deferedInserts[$table]['rows']) >= $options['defer'])
 				$this->bulkInsert($table);
 
@@ -151,10 +153,12 @@ class DbConnection
 				if (!isset($ids[$replace_id['from']]))
 					throw new \Exception('Query idx ' . $replace_id['from'] . ' does not exist');
 
-				$query['data'][$replace_id['field']] = $ids[$replace_id['from']];
+				foreach ($query['rows'] as &$row)
+					$row[$replace_id['field']] = $ids[$replace_id['from']];
+				unset($row);
 			}
 
-			$qry = $this->builder->insert($query['table'], $query['data'], $query['options']);
+			$qry = $this->builder->insert($query['table'], $query['rows'], $query['options']);
 
 			if (!$this->inTransaction())
 				$this->beginTransaction();
@@ -164,6 +168,19 @@ class DbConnection
 		}
 
 		return $ids[0] ?? null;
+	}
+
+	/**
+	 * Checks whether the given array is associative
+	 *
+	 * @param array $arr
+	 * @return bool
+	 */
+	private function isAssoc(array $arr): bool
+	{
+		if ([] === $arr)
+			return false;
+		return array_keys($arr) !== range(0, count($arr) - 1);
 	}
 
 	/**
