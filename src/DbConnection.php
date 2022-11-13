@@ -517,34 +517,40 @@ class DbConnection
 			foreach ($providers as $provider)
 				$r = $provider['provider']::alterSelectResult($this, $table, $r, $options);
 
-			yield $this->normalizeRowValues($table, $r);
+			yield $this->normalizeRowValues($table, $r, $options);
 		}
 	}
 
 	/**
 	 * @param string $table
 	 * @param array $row
+	 * @param array $options
 	 * @return array
 	 */
-	private function normalizeRowValues(string $table, array $row): array
+	private function normalizeRowValues(string $table, array $row, array $options): array
 	{
-		$tableModel = $this->getTable($table);
-
 		$newRow = [];
 		foreach ($row as $k => $v) {
-			if ($v !== null and array_key_exists($k, $tableModel->columns)) {
-				$c = $tableModel->columns[$k];
-				if (in_array($c['type'], ['double', 'float', 'decimal']))
-					$v = (float)$v;
-				if (in_array($c['type'], ['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'year']))
-					$v = (int)$v;
+			// TODO: support column aliases
+			[$realTable, $realColumn, $parsedColumn, $isFromJoin] = $this->builder->parseInputColumn($k, $table, $options['joins'] ?? [], $options['alias'] ?? null);
 
-				if ($c['type'] === 'point') {
-					$v = array_map(function ($v) {
-						return (float)$v;
-					}, explode(' ', substr($v, 6, -1)));
-					if (count($v) !== 2 or ($v[0] == 0 and $v[1] == 0))
-						$v = null;
+			if ($v !== null and $realTable) {
+				$tableModel = $this->getTable($realTable);
+
+				if (array_key_exists($k, $tableModel->columns)) {
+					$c = $tableModel->columns[$k];
+					if (in_array($c['type'], ['double', 'float', 'decimal']))
+						$v = (float)$v;
+					if (in_array($c['type'], ['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'year']))
+						$v = (int)$v;
+
+					if ($c['type'] === 'point') {
+						$v = array_map(function ($v) {
+							return (float)$v;
+						}, explode(' ', substr($v, 6, -1)));
+						if (count($v) !== 2 or ($v[0] == 0 and $v[1] == 0))
+							$v = null;
+					}
 				}
 			}
 
