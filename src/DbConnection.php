@@ -159,6 +159,8 @@ class DbConnection
 			}
 
 			$qry = $this->builder->insert($query['table'], $query['rows'], $query['options']);
+			if (!$qry)
+				continue;
 
 			if (!$this->inTransaction())
 				$this->beginTransaction();
