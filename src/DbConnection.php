@@ -312,11 +312,12 @@ class DbConnection
 		}
 
 		$response = $this->selectAll($table, $where, $options);
+		$response = $response ? $response[0] : null;
 
 		if ($options['single_cache'] ?? true)
 			$this->inMemoryCache[$table][$cacheKey] = $response;
 
-		return $response ? $response[0] : null;
+		return $response;
 	}
 
 	/**
