@@ -304,7 +304,18 @@ class DbConnection
 	{
 		$options['limit'] = 1;
 		$options['stream'] = false;
+
+		if ($options['single_cache'] ?? true) {
+			$cacheKey = 'single-select.' . sha1(json_encode($where) . json_encode($options));
+			if (isset($this->inMemoryCache[$table]) and array_key_exists($cacheKey, $this->inMemoryCache[$table]))
+				return $this->inMemoryCache[$table][$cacheKey];
+		}
+
 		$response = $this->selectAll($table, $where, $options);
+
+		if ($options['single_cache'] ?? true)
+			$this->inMemoryCache[$table][$cacheKey] = $response;
+
 		return $response ? $response[0] : null;
 	}
 
