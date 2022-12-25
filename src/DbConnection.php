@@ -223,18 +223,34 @@ class DbConnection
 		if (empty($where) and !($options['confirm'] ?? false))
 			throw new \Exception('Tried to update full table without explicit confirm');
 
+		$queries = [
+			[
+				'table' => $table,
+				'where' => $where,
+				'data' => $data,
+				'options' => $options,
+			],
+		];
+
 		$providers = Providers::find('DbProvider');
 		foreach ($providers as $provider)
-			[$where, $data, $options] = $provider['provider']::alterUpdate($this, $table, $where, $data, $options);
+			$queries = $provider['provider']::alterUpdate($this, $queries);
 
-		$qry = $this->builder->update($table, $where, $data, $options);
-		if ($qry === null)
-			return null;
+		$response = null;
+		foreach ($queries as $queryData) {
+			$qry = $this->builder->update($queryData['table'], $queryData['where'], $queryData['data'], $queryData['options']);
+			if ($qry === null)
+				continue;
 
-		if (!$this->inTransaction())
-			$this->beginTransaction();
+			if (!$this->inTransaction())
+				$this->beginTransaction();
 
-		return $this->query($qry, $table, 'UPDATE', $options);
+			$queryResponse = $this->query($qry, $table, 'UPDATE', $options);
+			if ($response === null) // First one
+				$response = $queryResponse;
+		}
+
+		return $response;
 	}
 
 	/**
