@@ -15,9 +15,9 @@ abstract class AbstractDbProvider extends AbstractProvider
 		return $queries;
 	}
 
-	public static function alterUpdate(DbConnection $db, array $queries): array
+	public static function alterUpdate(DbConnection $db, string $table, array|int $where, array $data, array $options): array
 	{
-		return $queries;
+		return [$where, $data, $options];
 	}
 
 	public static function alterDelete(DbConnection $db, string $table, array|int $where, array $options): array
