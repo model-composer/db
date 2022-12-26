@@ -1,4 +1,4 @@
-<?php namespace Model\Db;
+<?php namespace Model\Db\Providers;
 
 use Model\Config\AbstractConfigProvider;
 

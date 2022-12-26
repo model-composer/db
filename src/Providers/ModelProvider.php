@@ -1,6 +1,7 @@
-<?php namespace Model\Db;
+<?php namespace Model\Db\Providers;
 
 use Model\Core\AbstractModelProvider;
+use Model\Db\Db;
 
 class ModelProvider extends AbstractModelProvider
 {
