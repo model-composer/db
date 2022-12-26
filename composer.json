@@ -19,6 +19,6 @@
         "robmorgan/phinx": "^0.13.0",
         "model/providers-finder": "^0.3.0",
         "model/config": "^0.7.0",
-        "league/event": "^3.0"
+        "model/events": "^0.1.0"
     }
 }
