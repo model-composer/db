@@ -1,6 +1,8 @@
 <?php namespace Model\Db;
 
+use League\Event\EventDispatcher;
 use Model\Cache\Cache;
+use Model\Db\Events\ChangedTable;
 use Model\DbParser\Parser;
 use Model\DbParser\Table;
 use Model\ProvidersFinder\Providers;
@@ -691,6 +693,9 @@ class DbConnection
 		]);
 		if (isset($this->inMemoryCache[$table]))
 			unset($this->inMemoryCache[$table]);
+
+		$dispatcher = new EventDispatcher();
+		$dispatcher->dispatch(new ChangedTable($table));
 	}
 
 	/**
