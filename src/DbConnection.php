@@ -257,12 +257,12 @@ class DbConnection
 
 	/**
 	 * @param string $table
-	 * @param array|int|string $where
+	 * @param array|int $where
 	 * @param array $data
 	 * @param array $options
 	 * @return null|int
 	 */
-	public function updateOrInsert(string $table, array|int|string $where, array $data, array $options = []): ?int
+	public function updateOrInsert(string $table, array|int $where, array $data, array $options = []): ?int
 	{
 		$tableModel = $this->getTable($table);
 		if (!is_array($where) and is_numeric($where))
