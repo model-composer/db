@@ -257,6 +257,28 @@ class DbConnection
 
 	/**
 	 * @param string $table
+	 * @param array|int|string $where
+	 * @param array $data
+	 * @param array $options
+	 * @return null|int
+	 */
+	public function updateOrInsert(string $table, array|int|string $where, array $data, array $options = []): ?int
+	{
+		$tableModel = $this->getTable($table);
+		if (!is_array($where) and is_numeric($where))
+			$where = [$tableModel->primary[0] => $where];
+
+		$check = $this->select($table, $where);
+		if ($check) {
+			$this->update($table, $where, $data, $options);
+			return $check[$tableModel->primary[0]];
+		} else {
+			return $this->insert($table, array_merge($where, $data), $options);
+		}
+	}
+
+	/**
+	 * @param string $table
 	 * @param array|int $where
 	 * @param array $options
 	 * @return \PDOStatement|null
