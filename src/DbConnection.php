@@ -410,22 +410,17 @@ class DbConnection
 		if (!empty($options['joins']) or !empty($options['group_by']))
 			return false;
 
-		// If order_by is used, only array form is cacheable
+		// If order_by option is used, only array form is cacheable
 		if (($options['order_by'] ?? null) and !is_array($options['order_by']))
 			return false;
 
-		// Query with aggregations are currently not cacheables
-		$aggregations = [
-			'min',
-			'max',
-			'sum',
-			'avg',
-			'count',
-			'count_distinct',
-		];
+		// If fields option is used, only array form is cacheable
+		if (($options['fields'] ?? null) and !is_array($options['fields']))
+			return false;
 
-		foreach ($aggregations as $f) {
-			if ($options[$f] ?? null)
+		// If there is one unknown option, the query is not cacheable
+		foreach ($options as $k => $v) {
+			if (!in_array($k, ['cache', 'order_by', 'limit', 'offset', 'fields']))
 				return false;
 		}
 
