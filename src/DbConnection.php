@@ -420,7 +420,7 @@ class DbConnection
 
 		// If there is one unknown option, the query is not cacheable
 		foreach ($options as $k => $v) {
-			if (!in_array($k, ['cache', 'order_by', 'limit', 'offset', 'fields']))
+			if (!in_array($k, ['cache', 'order_by', 'limit', 'offset', 'fields', 'stream']))
 				return false;
 		}
 
