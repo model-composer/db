@@ -531,8 +531,14 @@ class DbConnection
 	 */
 	public function unionSelect(array $queries, array $options = []): iterable
 	{
-		$qry = $this->builder->unionSelect($queries, $options);
-		return $this->query($qry, null, 'SELECT', $options);
+		$providers = Providers::find('DbProvider');
+		foreach ($queries as &$qry) {
+			foreach ($providers as $provider)
+				[$qry['where'], $qry['options']] = $provider['provider']::alterSelect($this, $qry['table'], $qry['where'] ?? [], $qry['options'] ?? []);
+		}
+
+		$query = $this->builder->unionSelect($queries, $options);
+		return $this->query($query, null, 'SELECT', $options);
 	}
 
 	/**
