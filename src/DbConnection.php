@@ -449,9 +449,8 @@ class DbConnection
 	private function selectFromCache(string $table, array|int $where = [], array $options = []): array
 	{
 		$cacheKey = $this->getCacheKeyFor($table) . '.rows';
-		$rows = $this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table, $cacheKey) {
+		$rows = $this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
 			$item->expiresAfter(3600 * 24);
-			Cache::registerInvalidation('keys', [$cacheKey]);
 
 			$tableModel = $this->parser->getTable($table);
 
@@ -610,8 +609,7 @@ class DbConnection
 		if (empty($where) and empty($options)) {
 			// Simple counts are cached
 			$cacheKey = $this->getCacheKeyFor($table) . '.count';
-			return (int)$this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table, $cacheKey) {
-				Cache::registerInvalidation('keys', [$cacheKey]);
+			return (int)$this->getItemFromCache($table, $cacheKey, function (\Symfony\Contracts\Cache\ItemInterface $item) use ($table) {
 				$item->expiresAfter(3600 * 24);
 				return $this->count($table, [], ['cache' => false]);
 			});
