@@ -382,7 +382,7 @@ class DbConnection
 
 		$response = $this->query($qry, $table, 'SELECT', $options);
 
-		$results = $this->streamResults($table, $response, $options, $providers);
+		$results = $this->streamResults($table, $response, $options, ($options['alter'] ?? true) ? $providers : []);
 
 		if ($options['stream'] ?? true) {
 			return $results;
