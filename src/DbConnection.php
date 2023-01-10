@@ -117,9 +117,11 @@ class DbConnection
 			],
 		];
 
-		$providers = Providers::find('DbProvider');
-		foreach ($providers as $provider)
-			$queries = $provider['provider']::alterInsert($this, $queries);
+		if ($options['alter'] ?? true) {
+			$providers = Providers::find('DbProvider');
+			foreach ($providers as $provider)
+				$queries = $provider['provider']::alterInsert($this, $queries);
+		}
 
 		if ($options['defer'] !== null) {
 			if (count($queries) > 1)
@@ -234,9 +236,11 @@ class DbConnection
 			],
 		];
 
-		$providers = Providers::find('DbProvider');
-		foreach ($providers as $provider)
-			$queries = $provider['provider']::alterUpdate($this, $queries);
+		if ($options['alter'] ?? true) {
+			$providers = Providers::find('DbProvider');
+			foreach ($providers as $provider)
+				$queries = $provider['provider']::alterUpdate($this, $queries);
+		}
 
 		$response = null;
 		foreach ($queries as $queryData) {
@@ -291,9 +295,11 @@ class DbConnection
 		if (empty($where) and !($options['confirm'] ?? false))
 			throw new \Exception('Tried to delete full table without explicit confirm');
 
-		$providers = Providers::find('DbProvider');
-		foreach ($providers as $provider)
-			[$where, $options] = $provider['provider']::alterDelete($this, $table, $where, $options);
+		if ($options['alter'] ?? true) {
+			$providers = Providers::find('DbProvider');
+			foreach ($providers as $provider)
+				[$where, $options] = $provider['provider']::alterDelete($this, $table, $where, $options);
+		}
 
 		$qry = $this->builder->delete($table, $where, $options);
 
@@ -355,9 +361,11 @@ class DbConnection
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
 
-		$providers = Providers::find('DbProvider');
-		foreach ($providers as $provider)
-			[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
+		if ($options['alter'] ?? true) {
+			$providers = Providers::find('DbProvider');
+			foreach ($providers as $provider)
+				[$where, $options] = $provider['provider']::alterSelect($this, $table, $where, $options);
+		}
 
 		$convertibleOptions = ['order_by', 'group_by'];
 		foreach ($convertibleOptions as $convertibleOption) {
