@@ -502,7 +502,7 @@ class DbConnection
 						$sortingField = [$sortingField, 'ASC'];
 
 					if ($a[$sortingField[0]] != $b[$sortingField[0]])
-						return $a[$sortingField[0]] <=> $b[$sortingField[0]];
+						return strtoupper($sortingField[1]) === 'ASC' ? $a[$sortingField[0]] <=> $b[$sortingField[0]] : $b[$sortingField[0]] <=> $a[$sortingField[0]];
 				}
 
 				return 0;
