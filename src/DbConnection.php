@@ -2,6 +2,12 @@
 
 use Model\Cache\Cache;
 use Model\Db\Events\ChangedTable;
+use Model\Db\Events\DeleteQuery;
+use Model\Db\Events\InsertedQuery;
+use Model\Db\Events\InsertQuery;
+use Model\Db\Events\Query;
+use Model\Db\Events\SelectQuery;
+use Model\Db\Events\UpdateQuery;
 use Model\DbParser\Parser;
 use Model\DbParser\Table;
 use Model\Events\Events;
@@ -109,6 +115,8 @@ class DbConnection
 
 		$rows = $this->isAssoc($data) ? [$data] : $data;
 
+		Events::dispatch(new InsertQuery($table, ['data' => $data, 'options' => $options]));
+
 		$queries = [
 			[
 				'table' => $table,
@@ -173,6 +181,8 @@ class DbConnection
 			$ids[$qryIdx] = $this->db->lastInsertId();
 		}
 
+		Events::dispatch(new InsertedQuery($table, $ids[0] ?? null));
+
 		return $ids[0] ?? null;
 	}
 
@@ -226,6 +236,8 @@ class DbConnection
 
 		if (empty($where) and !($options['confirm'] ?? false))
 			throw new \Exception('Tried to update full table without explicit confirm');
+
+		Events::dispatch(new UpdateQuery($table, ['where' => $where, 'data' => $data, 'options' => $options]));
 
 		$queries = [
 			[
@@ -295,6 +307,8 @@ class DbConnection
 		if (empty($where) and !($options['confirm'] ?? false))
 			throw new \Exception('Tried to delete full table without explicit confirm');
 
+		Events::dispatch(new DeleteQuery($table, ['where' => $where, 'options' => $options]));
+
 		if ($options['alter'] ?? true) {
 			$providers = Providers::find('DbProvider');
 			foreach ($providers as $provider)
@@ -360,6 +374,8 @@ class DbConnection
 	{
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
+
+		Events::dispatch(new SelectQuery($table, ['where' => $where, 'options' => $options]));
 
 		if ($options['alter'] ?? true) {
 			$providers = Providers::find('DbProvider');
@@ -690,6 +706,8 @@ class DbConnection
 		// Cache invalidation for that specific table
 		if ($table and $type !== 'SELECT')
 			$this->changedTable($table);
+
+		Events::dispatch(new Query($query, $table));
 
 		return $this->db->query($query);
 	}
