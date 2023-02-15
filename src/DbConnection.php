@@ -113,7 +113,7 @@ class DbConnection
 			'defer' => null,
 		], $options);
 
-		$rows = $this->isAssoc($data) ? [$data] : $data;
+		$rows = ($this->isAssoc($data) or count($data) === 0) ? [$data] : $data;
 
 		Events::dispatch(new InsertQuery($table, ['data' => $data, 'options' => $options]));
 
