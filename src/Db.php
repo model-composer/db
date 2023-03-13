@@ -12,12 +12,19 @@ class Db
 	private static bool $registeredShutdown = false;
 
 	/**
-	 * @param string $name
+	 * @param string|null $name
 	 * @return DbConnection|null
 	 * @throws \Exception
 	 */
-	public static function getConnection(string $name = 'primary'): ?DbConnection
+	public static function getConnection(?string $name = null): ?DbConnection
 	{
+		if ($name === null) {
+			if (count(self::$connections) > 0)
+				return self::$connections[array_keys(self::$connections)[0]];
+			else
+				$name = 'primary';
+		}
+
 		if (isset(self::$connections[$name]))
 			return self::$connections[$name];
 
@@ -73,7 +80,18 @@ class Db
 		$config = Config::get('db');
 		if (isset($config['databases'][$db]))
 			unset($config['databases'][$db]);
+		self::closeConnection($db);
 		Config::set('db', $config);
+	}
+
+	/**
+	 * @param string $db
+	 * @return void
+	 */
+	public static function closeConnection(string $db): void
+	{
+		if (isset(self::$connections[$db]))
+			unset(self::$connections[$db]);
 	}
 
 	/**
