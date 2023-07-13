@@ -349,19 +349,8 @@ class DbConnection
 		$options['limit'] = 1;
 		$options['stream'] = false;
 
-		if ($options['single_cache'] ?? true) {
-			$cacheKey = 'single-select.' . sha1(json_encode($where) . json_encode($options));
-			if (isset($this->inMemoryCache[$table]) and array_key_exists($cacheKey, $this->inMemoryCache[$table]))
-				return $this->inMemoryCache[$table][$cacheKey];
-		}
-
 		$response = $this->selectAll($table, $where, $options);
-		$response = $response ? $response[0] : null;
-
-		if ($options['single_cache'] ?? true)
-			$this->inMemoryCache[$table][$cacheKey] = $response;
-
-		return $response;
+		return $response ? $response[0] : null;
 	}
 
 	/**
@@ -375,8 +364,15 @@ class DbConnection
 		if (isset($this->deferedInserts[$table]))
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
 
+		if ($options['in_memory_cache'] ?? true) {
+			$cacheKey = sha1(json_encode($where) . json_encode($options));
+			if (isset($this->inMemoryCache[$table]) and array_key_exists($cacheKey, $this->inMemoryCache[$table]))
+				return $this->inMemoryCache[$table][$cacheKey];
+		}
+
 		Events::dispatch(new SelectQuery($table, ['where' => $where, 'options' => $options]));
 
+		$originalWhere = $where;
 		if ($options['alter'] ?? true) {
 			$providers = Providers::find('DbProvider');
 			foreach ($providers as $provider)
@@ -400,6 +396,13 @@ class DbConnection
 
 		$results = $this->streamResults($table, $response, $options, ($options['alter'] ?? true) ? $providers : []);
 
+		if (($options['in_memory_cache'] ?? true) and $this->isWhereById($table, $originalWhere) or ($response->rowCount() > 0 and $response->rowCount() < 300)) {
+			$this->inMemoryCache[$table][$cacheKey] = [];
+			foreach ($results as $r)
+				$this->inMemoryCache[$table][$cacheKey][] = $r;
+			return $this->inMemoryCache[$table][$cacheKey];
+		}
+
 		if ($options['stream'] ?? true) {
 			return $results;
 		} else {
@@ -409,6 +412,20 @@ class DbConnection
 
 			return $resultsArr;
 		}
+	}
+
+	/**
+	 * @param string $table
+	 * @param array|int $where
+	 * @return bool
+	 */
+	private function isWhereById(string $table, array|int $where): bool
+	{
+		if (is_int($where))
+			return true;
+
+		$tableModel = $this->parser->getTable($table);
+		return (count($where) === 1 and isset($where[$tableModel->primary[0]]));
 	}
 
 	/**
@@ -425,8 +442,7 @@ class DbConnection
 
 		// Only full selects or selects by id are cacheable
 		if (is_array($where) and count($where) > 0) {
-			$tableModel = $this->parser->getTable($table);
-			if (count($where) > 1 or !isset($where[$tableModel->primary[0]]) or !is_numeric($where[$tableModel->primary[0]]))
+			if (!$this->isWhereById($table, $where))
 				return false;
 		}
 
