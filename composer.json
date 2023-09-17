@@ -16,7 +16,7 @@
         "model/query-builder": "^0.5.0",
         "model/db-parser": "^0.2.0",
         "model/cache": "^0.5.0",
-        "robmorgan/phinx": "^0.13.0",
+        "robmorgan/phinx": "^2.0.0",
         "model/providers-finder": "^0.3.0",
         "model/config": "^0.7.0",
         "model/events": "^0.2.0"
