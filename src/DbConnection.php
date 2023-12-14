@@ -626,8 +626,16 @@ class DbConnection
 						$v = array_map(function ($v) {
 							return (float)$v;
 						}, explode(' ', substr($v, 6, -1)));
+
 						if (count($v) !== 2 or ($v[0] == 0 and $v[1] == 0))
 							$v = null;
+
+						if ($v) {
+							$v = [
+								'lat' => $v[1],
+								'lng' => $v[0],
+							];
+						}
 					}
 				}
 			}
