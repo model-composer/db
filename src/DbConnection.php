@@ -617,25 +617,42 @@ class DbConnection
 
 				if (array_key_exists($k, $tableModel->columns)) {
 					$c = $tableModel->columns[$k];
-					if (in_array($c['type'], ['double', 'float', 'decimal']))
-						$v = (float)$v;
-					if (in_array($c['type'], ['tinyint', 'smallint', 'mediumint', 'int', 'bigint', 'year']))
-						$v = (int)$v;
 
-					if ($c['type'] === 'point') {
-						$v = array_map(function ($v) {
-							return (float)$v;
-						}, explode(' ', substr($v, 6, -1)));
+					switch ($c['type']) {
+						case 'tinyint':
+						case 'smallint':
+						case 'mediumint':
+						case 'int':
+						case 'bigint':
+						case 'year':
+							$v = (int)$v;
+							break;
 
-						if (count($v) !== 2 or ($v[0] == 0 and $v[1] == 0))
-							$v = null;
+						case 'double':
+						case 'float':
+						case 'decimal':
+							$v = (float)$v;
+							break;
 
-						if ($v) {
-							$v = [
-								'lat' => $v[1],
-								'lng' => $v[0],
-							];
-						}
+						case 'point':
+							$v = array_map(function ($v) {
+								return (float)$v;
+							}, explode(' ', substr($v, 6, -1)));
+
+							if (count($v) !== 2 or ($v[0] == 0 and $v[1] == 0))
+								$v = null;
+
+							if ($v) {
+								$v = [
+									'lat' => $v[1],
+									'lng' => $v[0],
+								];
+							}
+							break;
+
+						case 'json':
+							$v = json_decode($v, true);
+							break;
 					}
 				}
 			}
