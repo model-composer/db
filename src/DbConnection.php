@@ -649,6 +649,10 @@ class DbConnection
 								];
 							}
 							break;
+
+						case 'json':
+							$v = json_decode($v, true);
+							break;
 					}
 				}
 			}
