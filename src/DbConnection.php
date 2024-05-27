@@ -425,7 +425,7 @@ class DbConnection
 			return true;
 
 		$tableModel = $this->parser->getTable($table);
-		return (count($where) === 1 and isset($where[$tableModel->primary[0]]));
+		return (count($where) === 1 and isset($where[$tableModel->primary[0]]) and is_numeric($where[$tableModel->primary[0]]));
 	}
 
 	/**
