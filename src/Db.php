@@ -99,12 +99,14 @@ class Db
 	 *
 	 * @return void
 	 */
-	public static function migrate(): void
+	public static function migrate(string $single_db = null): void
 	{
 		$packagesWithProvider = Providers::find('DbProvider');
 
 		$config = Config::get('db');
 		foreach ($config['databases'] as $databaseName => $database) {
+			if ($single_db !== null and $databaseName !== $single_db)
+				continue;
 			$paths = $database['migrations'] ?: [];
 			foreach ($paths as &$path) {
 				$path = self::getProjectRoot() . $path;
