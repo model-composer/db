@@ -707,7 +707,7 @@ class DbConnection
 	 * @return \PDOStatement
 	 * @throws \Exception
 	 */
-	public function query(string $query, string $table = null, string $type = null, array $options = []): \PDOStatement
+	public function query(string $query, ?string $table = null, ?string $type = null, array $options = []): \PDOStatement
 	{
 		$options = array_merge([
 			'query_limit' => true,
