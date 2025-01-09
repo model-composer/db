@@ -99,7 +99,7 @@ class Db
 	 *
 	 * @return void
 	 */
-	public static function migrate(string $single_db = null): void
+	public static function migrate(?string $single_db = null): void
 	{
 		$packagesWithProvider = Providers::find('DbProvider');
 
