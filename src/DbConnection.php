@@ -690,11 +690,11 @@ class DbConnection
 			$options['count_distinct'] = [$options['group_by'] => 'MODEL_COUNT'];
 			unset($options['group_by']);
 		} else {
-			$table = $this->getTable($table);
-			if (count($table->primary) === 0)
+			$tableModel = $this->getTable($table);
+			if (count($tableModel->primary) === 0)
 				throw new \Exception('Cannot count rows without a primary key');
 
-			$options['count'] = [$table->primary[0] => 'MODEL_COUNT'];
+			$options['count'] = [$tableModel->primary[0] => 'MODEL_COUNT'];
 		}
 
 		$options['fields'] = [];
