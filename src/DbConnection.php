@@ -49,9 +49,10 @@ class DbConnection
 				'total' => null,
 			],
 			'cache_tables' => [],
+			'charset' => 'utf8',
 		], $config);
 
-		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=utf8', $this->config['username'], $this->config['password'], [
+		$this->db = new \PDO('mysql:host=' . $this->config['host'] . ':' . $this->config['port'] . ';dbname=' . $this->config['name'] . ';charset=' . $this->config['charset'], $this->config['username'], $this->config['password'], [
 			\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
 			\PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
 			\PDO::ATTR_STRINGIFY_FETCHES => false,

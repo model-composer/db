@@ -74,6 +74,15 @@ class ConfigProvider extends AbstractConfigProvider
 					return $config;
 				},
 			],
+			[
+				'version' => '0.9.10',
+				'migration' => function (array $config, string $env) {
+					foreach ($config['databases'] as &$database)
+						$database['charset'] = 'utf8';
+
+					return $config;
+				},
+			],
 		];
 	}
 
