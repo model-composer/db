@@ -50,8 +50,14 @@ class Db
 	/**
 	 * @return DbConnection[]
 	 */
-	public static function getConnections(): array
+	public static function getConnections(bool $only_active = true): array
 	{
+		if (!$only_active) {
+			$config = Config::get('db');
+			foreach ($config['databases'] as $databaseName => $database)
+				self::getConnection($databaseName);
+		}
+
 		return self::$connections;
 	}
 
