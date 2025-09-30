@@ -1,0 +1,297 @@
+# Model/Db
+
+A MySQL abstraction layer for the ModEl Framework, providing elegant database operations with built-in caching, transactions, migrations, and event dispatching.
+
+## Features
+
+- **Simple CRUD Operations**: Intuitive methods for insert, update, delete, and select operations (uses `model/query-builder` under the hood)
+- **Smart Caching**: Automatic caching for frequently accessed data with intelligent invalidation
+- **Transaction Management**: Nested transaction support with automatic commit/rollback
+- **Database Migrations**: Integrated Phinx-based migration system
+- **Event System**: Comprehensive event dispatching for all database operations
+- **Provider System**: Extensible provider architecture for customizing database behavior
+- **Query Limits**: Built-in protection against runaway queries
+- **Type Safety**: Automatic type casting for database values
+
+## Installation
+
+```bash
+composer require model/db
+```
+
+## Configuration
+
+The package uses the `model/config` system. Configuration is stored under the `db` key:
+
+```php
+[
+    'databases' => [
+        'primary' => [
+            'host' => 'localhost',
+            'port' => 3306,
+            'username' => 'root',
+            'password' => '',
+            'name' => 'database',
+            'charset' => 'utf8',
+            'migrations' => ['migrations/'], // Migration paths
+            'cache_tables' => [], // Tables to always cache
+            'limits' => [
+                'query' => 100,  // Max same query executions
+                'table' => 10000, // Max queries per table
+                'total' => null,  // Max total queries
+            ],
+        ],
+    ],
+]
+```
+
+## Basic Usage
+
+### Getting a Connection
+
+```php
+use Model\Db\Db;
+
+// Get the default connection (first defined or 'primary')
+$db = Db::getConnection();
+
+// Get a specific connection
+$db = Db::getConnection('alternative_db');
+```
+
+### Query builder integration
+
+This package leans on the `model/query-builder` package for the query building.
+Here follows a quick overview, but refer to said package for more details on "where" clauses building and options.
+
+### Insert Operations
+
+```php
+// Insert a single row
+$id = $db->insert('users', [
+    'name' => 'John Doe',
+    'email' => 'john@example.com',
+    'age' => 30
+]);
+```
+
+### Select Operations
+
+```php
+// Select by ID
+$user = $db->select('users', 1);
+
+// Select with conditions
+$user = $db->select('users', ['email' => 'john@example.com']);
+
+// Select all rows
+$users = $db->selectAll('users');
+
+// Streaming results (it returns a generator and not an array)
+$users = $db->selectAll('users', [], ['stream' => true]);
+foreach ($users as $user) {
+    // Process each user
+}
+```
+
+Streaming is the default behavior, but you can disable it by setting the `stream` option to `false`.
+
+### Update Operations
+
+```php
+// Update by ID
+$db->update('users', 1, ['name' => 'Jane Doe']);
+
+// Update entire table (requires confirmation)
+$db->update('users', [], ['active' => true], ['confirm' => true]);
+
+// Update or insert
+$id = $db->updateOrInsert('users', ['email' => 'john@example.com'], [
+    'name' => 'John Updated',
+    'age' => 31
+]);
+```
+
+### Delete Operations
+
+```php
+// Delete by ID
+$db->delete('users', 1);
+
+// Delete with conditions
+$db->delete('users', ['status' => 'inactive']);
+
+// Delete entire table (requires confirmation)
+$db->delete('users', [], ['confirm' => true]);
+```
+
+### Count Operations
+
+```php
+// Count all rows
+$total = $db->count('users');
+
+// Count with conditions
+$active = $db->count('users', ['status' => 'active']);
+
+// Count with grouping
+$count = $db->count('users', [], ['group_by' => 'status']);
+```
+
+## Advanced Features
+
+### Transactions
+
+```php
+$db->beginTransaction();
+
+try {
+    $id = $db->insert('users', ['name' => 'John']);
+    $db->insert('profiles', ['user_id' => $id]);
+    
+    $db->commit();
+} catch (\Exception $e) {
+    $db->rollBack();
+    throw $e;
+}
+```
+
+Transactions support nesting - only the outermost transaction actually commits to the database.
+
+### Bulk/Deferred Inserts
+
+For high-performance bulk operations, use deferred inserts:
+
+```php
+// Defer inserts and flush every 100 rows
+for ($i = 0; $i < 1000; $i++) {
+    $db->insert('users', [
+        'name' => 'User ' . $i,
+        'email' => 'user' . $i . '@example.com',
+    ], ['defer' => 100]);
+}
+
+// Manually flush remaining inserts
+$db->bulkInsert('users');
+```
+
+### Caching
+
+The package provides intelligent caching:
+
+- Simple queries on small tables (< 200 rows) are automatically table-cached (meaning that the whole table is cached in memory)
+- Tables listed in `cache_tables` config are always cached
+- Cache is automatically invalidated on INSERT, UPDATE, or DELETE
+- In-memory cache for repeated queries in the same request (with the same parameters)
+
+```php
+// Disable cache for a query
+$users = $db->selectAll('users', [], ['cache' => false]);
+
+// Manually invalidate cache for a table
+$db->changedTable('users');
+```
+
+### Union Queries
+
+```php
+$results = $db->unionSelect([
+    [
+        'table' => 'active_users',
+        'where' => ['status' => 'active'],
+    ],
+    [
+        'table' => 'pending_users',
+        'where' => ['status' => 'pending'],
+    ],
+]);
+```
+
+### Raw Queries
+
+```php
+$statement = $db->query('SELECT * FROM users WHERE age > 18');
+
+foreach ($statement as $row) {
+    // Process row
+}
+```
+
+### Database Introspection
+
+```php
+// Get table structure
+$table = $db->getTable('users');
+echo $table->name;
+print_r($table->columns);
+print_r($table->primary);
+print_r($table->indexes);
+
+// Get the parser
+$parser = $db->getParser();
+
+// Get the query builder
+$builder = $db->getBuilder();
+
+// Get the PDO instance
+$pdo = $db->getDb();
+```
+
+## Events
+
+The package dispatches events for all database operations:
+
+- `Model\Db\Events\Query` - Any query execution
+- `Model\Db\Events\InsertQuery` - Before insert
+- `Model\Db\Events\InsertedQuery` - After insert
+- `Model\Db\Events\UpdateQuery` - Before update
+- `Model\Db\Events\DeleteQuery` - Before delete
+- `Model\Db\Events\SelectQuery` - Before select
+- `Model\Db\Events\ChangedTable` - Table data changed
+
+See `model/events` package for more details.
+
+## Migrations
+
+The package uses [Phinx](https://phinx.org/) for database migrations.
+
+### Running Migrations
+
+Migrations are automatically run when refreshing the ModEl Framework cache.
+To manually run migrations:
+
+```php
+use Model\Db\Db;
+
+// Run all migrations for all databases
+Db::migrate();
+
+// Run migrations for a specific database
+Db::migrate('primary');
+```
+
+### Creating Migrations
+
+Create migration files in the configured migrations folder:
+
+```php
+<?php
+
+use Phinx\Migration\AbstractMigration;
+
+class CreateUsersTable extends AbstractMigration
+{
+    public function change()
+    {
+        $table = $this->table('users');
+        $table->addColumn('name', 'string', ['limit' => 100])
+              ->addColumn('email', 'string', ['limit' => 100])
+              ->addColumn('age', 'integer')
+              ->addColumn('created_at', 'datetime')
+              ->addIndex(['email'], ['unique' => true])
+              ->create();
+    }
+}
+```
+
+See `robmorgan/phinx` package docs for more details.
