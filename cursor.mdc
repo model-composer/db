@@ -257,6 +257,8 @@ See `model/events` package for more details.
 
 The package uses [Phinx](https://phinx.org/) for database migrations.
 
+A note on foreign keys: as a convention, the "update" action is always "CASCADE" and the "delete" action depends on the context.
+
 ### Running Migrations
 
 Migrations are automatically run when refreshing the ModEl Framework cache.
