@@ -366,7 +366,7 @@ class DbConnection
 			throw new \Exception('There are open bulk inserts on the table ' . $table . '; can\'t read');
 
 		if ($options['in_memory_cache'] ?? true) {
-			$cacheKey = sha1(json_encode($where) . json_encode($options));
+			$cacheKey = sha1($this->config['host'] . '.' . $this->config['name'] . '.' . json_encode($where) . '.' . json_encode($options));
 			if (isset($this->inMemoryCache[$table]) and array_key_exists($cacheKey, $this->inMemoryCache[$table]))
 				return $this->inMemoryCache[$table][$cacheKey];
 		}
@@ -397,7 +397,7 @@ class DbConnection
 
 		$results = $this->streamResults($table, $response, $options, ($options['alter'] ?? true) ? $providers : []);
 
-		if (($options['in_memory_cache'] ?? true) and $this->isWhereById($table, $originalWhere) or ($response->rowCount() > 0 and $response->rowCount() < 300)) {
+		if (($options['in_memory_cache'] ?? true) and ($this->isWhereById($table, $originalWhere) or ($response->rowCount() > 0 and $response->rowCount() < 300))) {
 			$this->inMemoryCache[$table][$cacheKey] = [];
 			foreach ($results as $r)
 				$this->inMemoryCache[$table][$cacheKey][] = $r;
