@@ -813,18 +813,24 @@ class DbConnection
 
 	/**
 	 * @param string $name
+	 * @param bool $alter
 	 * @return Table
 	 */
-	public function getTable(string $name): Table
+	public function getTable(string $name, bool $alter = true): Table
 	{
 		if (!isset($this->tablesCache[$name])) {
 			$tableModel = clone $this->parser->getTable($name);
 
-			$providers = Providers::find('DbProvider');
-			foreach ($providers as $provider)
-				$tableModel = $provider['provider']::alterTableModel($this, $name, clone $tableModel);
+			if ($alter) {
+				$providers = Providers::find('DbProvider');
+				foreach ($providers as $provider)
+					$tableModel = $provider['provider']::alterTableModel($this, $name, clone $tableModel);
+			}
 
-			$this->tablesCache[$name] = $tableModel;
+			if ($alter) // I only cache full processed tables
+				$this->tablesCache[$name] = $tableModel;
+			else
+				return $tableModel;
 		}
 
 		return $this->tablesCache[$name];
